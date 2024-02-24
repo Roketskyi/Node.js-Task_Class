@@ -8,7 +8,13 @@ class DBForm {
     }
 
     getStudent(name) {
-        return this.students.find(student => student.name === name);
+        const student = this.students.find(student => student.name === name);
+
+        if(student) {
+            student.languages = student.getLanguageLevels();
+        }
+
+        return student;
     }
 
     getAllStudents() {
@@ -16,39 +22,59 @@ class DBForm {
     }
 
     GetListOfLanguages() {
-        const allLanguages = this.students.flatMap(student => student.language);
-        
-        // робимо методом розгортання з сет в масив 
+        const allLanguages = this.students.flatMap(student => student.languages.map(lang => lang.language));
+
         const uniqueLanguages = [...new Set(allLanguages)];
-        
+
         return uniqueLanguages;
     }
 
     GetNumberOfStudentsForLanguage(language) {
-        return this.students.filter(student => student.language.includes(language)).length;
+        return this.students.filter(student => student.languages.some(lang => lang.language === language)).length;
     }
 
     GetNumberOfStudentsForLanguageAtLevel(language, levelOfLanguage) {
-        return this.students.filter(student => student.language.includes(language) && student.levelOfLanguage === levelOfLanguage).length;
+        const level = Object.values(levels).find(l => l.level === levelOfLanguage);
+    
+        if (!level) {
+            console.log(`Неправильний рівень мови: ${levelOfLanguage}`);
+
+            return 0;
+        }
+    
+        return this.students.filter(student => student.languages.some(lang => lang.language === language && lang.levelOfLanguage.level === level.level)).length;
     }
+    
 
     GetMonthlyFeeForPerson(name) {
         const student = this.students.find(student => student.name === name);
+    
         if (student && student.phoneNumber) {
-            const phoneNumber = student.phoneNumber;
-            const foundPhoneNumber = this.students.find(student => student.phoneNumber === phoneNumber);
-            if (foundPhoneNumber) {
-                return foundPhoneNumber.monthlyFeeChange;
-            }
+            return student.phoneNumber.getPhoneMonthlyFee();
         }
+    
         return null;
+    }
+
+    GetTopNStudentsWithHighestMonthlyFee(N) {
+        const studentsWithPhoneFee = this.students.filter(student => student.phoneNumber);
+        const sortedStudents = studentsWithPhoneFee.sort((a, b) => b.phoneNumber.getPhoneMonthlyFee() - a.phoneNumber.getPhoneMonthlyFee());
+        
+        return sortedStudents.slice(0, N);
+    }
+
+    GetTopNStudentsWithLowestMonthlyFee(N) {
+        const studentsWithPhoneFee = this.students.filter(student => student.phoneNumber);
+        const sortedStudents = studentsWithPhoneFee.sort((a, b) => a.phoneNumber.getPhoneMonthlyFee() - b.phoneNumber.getPhoneMonthlyFee());
+        
+        return sortedStudents.slice(0, N);
     }
 }
 
 class Students {
     static lastId = 0;
 
-    constructor(name, surname, lastName, nameOfArticle, date, phoneNumber, email, language, hobby) {
+    constructor(name, surname, lastName, nameOfArticle, date, phoneNumber, emails, languages, hobby) {
         this.id = ++Students.lastId;
         this.name = name;
         this.surname = surname;
@@ -56,8 +82,8 @@ class Students {
         this.nameOfArticle = nameOfArticle;
         this.date = date;
         this.phoneNumber = phoneNumber;
-        this.email = email;
-        this.language = language;
+        this.emails = emails;
+        this.languages = languages;
         this.hobby = hobby;
     }
 
@@ -78,15 +104,57 @@ class Students {
     }
 
     getEmail() {
-        return this.email;
+        return this.emails.getEmail();
     }
 
-    updateEmail(newEmail) {
-        this.email = newEmail;
+    updateEmail(newEmails) {
+        this.emails.updateEmail(newEmails);
     }
 
-    removeEmail() {
-        this.email = null;
+    addEmail(newEmail) {
+        this.emails.addEmail(newEmail);
+    }
+
+    removeEmail(emailToRemove) {
+        this.emails.removeEmail(emailToRemove);
+    }
+
+    getLanguages() {
+        return this.languages;
+    }
+
+    addLanguage(language, level) {
+        this.languages.push({ language, levelOfLanguage: level });
+    }
+
+    removeLanguage(language) {
+        this.languages = this.languages.filter(lang => lang.language !== language);
+    }
+
+    getLanguageLevels() {
+        return this.languages.map(lang => ({ language: lang.language, levelOfLanguage: lang.levelOfLanguage.level }));
+    }
+}
+
+class Email {
+    constructor(emails) {
+        this.emails = emails;
+    }
+
+    getEmail() {
+        return this.emails;
+    }
+
+    updateEmail(newEmails) {
+        this.emails = newEmails;
+    }
+
+    addEmail(newEmail) {
+        this.emails.push(newEmail);
+    }
+
+    removeEmail(emailToRemove) {
+        this.emails = this.emails.filter(email => email !== emailToRemove);
     }
 }
 
@@ -128,8 +196,9 @@ class Language {
         return this.language;
     }
 
-    updateLanguage(newLanguage) {
+    updateLanguageAndLevel(newLanguage, newLevel) {
         this.language = newLanguage;
+        this.levelOfLanguage = newLevel;
     }
 
     removeLanguage() {
@@ -138,10 +207,6 @@ class Language {
 
     getLevelOfLanguage() {
         return this.levelOfLanguage;
-    }
-
-    updateLevelOfLanguage(newLevel) {
-        this.levelOfLanguage = newLevel;
     }
 
     removeLevelOfLanguage() {
@@ -157,11 +222,11 @@ class Language {
     }
 
     getLanguageCountStudents(students) {
-        return students.filter(student => student.language.includes(this.language)).length;
+        return students.filter(student => student.languages.some(lang => lang.language === this.language)).length;
     }
 
     getStudentsWithSameLanguageCount(students) {
-        return students.filter(student => student.language.includes(this.language) && student.levelOfLanguage === this.levelOfLanguage).length;
+        return students.filter(student => student.languages.some(lang => lang.language === this.language && lang.levelOfLanguage === this.levelOfLanguage)).length;
     }
 }
 
@@ -241,11 +306,10 @@ class Hobby {
 }
 
 class PhoneNumber {
-    constructor(phoneNumber, monthlyFeeChange, mobileOperator, email) {
+    constructor(phoneNumber, phoneMonthlyFee, mobileOperator) {
         this.phoneNumber = phoneNumber;
-        this.monthlyFeeChange = monthlyFeeChange;
+        this.phoneMonthlyFee = phoneMonthlyFee;
         this.mobileOperator = mobileOperator;
-        this.email = email;
     }
 
     getPhoneNumber() {
@@ -260,28 +324,16 @@ class PhoneNumber {
         this.phoneNumber = null;
     }
 
-    getEmail() {
-        return this.email;
+    getPhoneMonthlyFee() {
+        return this.phoneMonthlyFee;
     }
 
-    updateEmail(newEmail) {
-        this.email = newEmail;
+    updatePhoneMonthlyFee(newPhoneMonthlyFee) {
+        this.phoneMonthlyFee = newPhoneMonthlyFee;
     }
 
-    removeEmail() {
-        this.email = null;
-    }
-
-    getMonthlyFeeChange() {
-        return this.monthlyFeeChange;
-    }
-
-    updateMonthlyFeeChange(newMonthlyFeeChange) {
-        this.monthlyFeeChange = newMonthlyFeeChange;
-    }
-
-    removeMonthlyFeeChange() {
-        this.monthlyFeeChange = null;
+    removePhoneMonthlyFee() {
+        this.phoneMonthlyFee = null;
     }
 
     getMobileOperator() {
@@ -297,41 +349,79 @@ class PhoneNumber {
     }
 }
 
+class LanguageLevel {
+    constructor(level) {
+        this.level = level;
+    }
+}
+
+const levels = {
+    A0: new LanguageLevel('A0'),
+    A1: new LanguageLevel('A1'),
+    A2: new LanguageLevel('A2'),
+    B1: new LanguageLevel('B1'),
+    B2: new LanguageLevel('B2'),
+    C1: new LanguageLevel('C1'),
+    C2: new LanguageLevel('C2')
+};
+
 const student1 = new Students(
     'Іван',
-    'Іванович',
-    'Олександрович',
+    'Тарасович',
+    'Лисиця',
     'Стаття 1',
     new Date('2024-02-20'),
-    '380662339163',
-    ['example@gmail.com', 'example2@gmail.com'],
-    ['English', 'Ukrainian'],
-    ['football', 'reading']
+    new PhoneNumber('380837232843', 150, "Лайф"),
+    [
+        new Email("Rodasd@dasd.dsd"),
+    ],
+    [
+        new Language("Англійська", levels.A1),
+        new Language("Французька", levels.B2),
+    ],
+    [
+        new Hobby('football', 5, 'high'),
+    ],
 );
 
 const student2 = new Students(
-    'Іван',
+    'Петро',
     'Іванович',
-    'Олександрович',
+    'Щур',
     'Стаття 1',
     new Date('2024-02-20'),
-    '380662339163',
-    ['example@gmail.com', 'example2@gmail.com'],
-    ['Spanish'],
-    ['football', 'reading']
+    new PhoneNumber('380662339163', 250, "Київстар"),
+    [
+        new Email("Rodasd@dasd.dsd"),
+    ],
+    [
+        new Language("Англійська", levels.A1),
+        new Language("Французька", levels.B2),
+    ],
+    [
+        new Hobby('football', 5, 'high'),
+    ],
 );
 
 const student3 = new Students(
-    'Іван',
-    'Іванович',
-    'Олександрович',
+    'Василь',
+    'Вікторович',
+    'Комп', 
     'Стаття 1',
     new Date('2024-02-20'),
-    '380662339163',
-    ['example@gmail.com', 'example2@gmail.com'],
-    ['English', 'Ukrainian', 'Chinesee'],
-    ['football', 'reading']
+    new PhoneNumber('380847123921', 50, "Водафон"),
+    [
+        new Email("Rodasd@dasd.dsd"),
+    ],
+    [
+        new Language("Англійська", levels.A1),
+        new Language("Пакистанська", levels.B2)
+    ],
+    [
+        new Hobby('football', 4, 'high'),
+    ],
 );
+
 
 // Створення екземпляра класу DBForm
 const dbForm = new DBForm();
@@ -341,23 +431,26 @@ dbForm.addStudent(student1);
 dbForm.addStudent(student2);
 dbForm.addStudent(student3);
 
-// Отримання студента
-console.log("Отримання студента:");
-console.log(dbForm.getStudent('Іван'));
+// student2.languages[1].updateLanguageAndLevel("Іф", levels.B2);
 
-// Отримання всіх студентів
-console.log("Отримання всіх студентів:");
-console.log(dbForm.getAllStudents());
+// console.log("Отримання студента: ", (dbForm.getStudent('Василь')));
 
-// Отримання списку мов
-console.log("Отримання списку мов:");
-console.log(dbForm.GetListOfLanguages());
+// Отримуємо всіх студентів
+// console.log(`Отримання всіх студентів:`, (dbForm.getAllStudents()));
 
-// Отримання кількості студентів за мовою
-console.log("Отримання кількості студентів за мовою:");
-console.log("Кількість студентів, які знають англійську мову:", dbForm.GetNumberOfStudentsForLanguage('English'));
-console.log("Кількість студентів, які знають іспанську мову на рівні Intermediate:", dbForm.GetNumberOfStudentsForLanguageAtLevel('Spanish', 'Intermediate'));
+// Отримуємо список мов
+// console.log("Отримання списку мов: ", dbForm.GetListOfLanguages());
 
-// Отримання щомісячної плати за мобільний зв'язок для студента
-console.log("Отримання щомісячної плати за мобільний зв'язок для студента:");
-console.log("Щомісячна плата за мобільний зв'язок для Івана:", dbForm.GetMonthlyFeeForPerson('Іван'));
+// Отримуємо кількість студентів за мовою
+// console.log("Отримання кількості студентів за мовою:");
+// console.log("Кількість студентів, які знають Французьку мову: ", dbForm.GetNumberOfStudentsForLanguage('Французька'));
+// console.log("Кількість студентів, які знають Іф мову на рівні B2: ", dbForm.GetNumberOfStudentsForLanguageAtLevel('Іф', "B2"));
+
+// Отримуємо щомісячну плату за мобільний зв'язок для студента
+// console.log("Щомісячна плата за мобільний зв'язок для Івана: ", dbForm.GetMonthlyFeeForPerson('Іван'));
+
+// Отримання N абонентів з найбільшими витратами на мобільний зв'язок
+// console.log("Найбільші витрати на мобільний зв'язок:", dbForm.GetTopNStudentsWithHighestMonthlyFee(2));
+
+// Отримання N абонентів з найменшими витратами на мобільний зв'язок
+// console.log("Найменші витрати на мобільний зв'язок:", dbForm.GetTopNStudentsWithLowestMonthlyFee(2));
