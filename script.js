@@ -10,10 +10,6 @@ class DBForm {
     getStudent(name) {
         const student = this.students.find(student => student.name === name);
 
-        if(student) {
-            student.languages = student.getLanguageLevels();
-        }
-
         return student;
     }
 
@@ -433,7 +429,7 @@ dbForm.addStudent(student3);
 
 // student2.languages[1].updateLanguageAndLevel("Іф", levels.B2);
 
-// console.log("Отримання студента: ", (dbForm.getStudent('Василь')));
+console.log("Отримання студента: ", (dbForm.getStudent('Василь')));
 
 // Отримуємо всіх студентів
 // console.log(`Отримання всіх студентів:`, (dbForm.getAllStudents()));
