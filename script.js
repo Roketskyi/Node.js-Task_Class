@@ -70,12 +70,13 @@ class DBForm {
 class Students {
     static lastId = 0;
 
-    constructor(name, surname, lastName, nameOfArticle, date, phoneNumber, emails, languages, hobby) {
+    constructor(name, surname, lastName, article, expensesPerMonth, date, phoneNumber, emails, languages, hobby) {
         this.id = ++Students.lastId;
         this.name = name;
         this.surname = surname;
         this.lastName = lastName;
-        this.nameOfArticle = nameOfArticle;
+        this.article = article;
+        this.expensesPerMonth = expensesPerMonth;
         this.date = date;
         this.phoneNumber = phoneNumber;
         this.emails = emails;
@@ -93,10 +94,6 @@ class Students {
 
     getLastName() {
         return this.lastName;
-    }
-
-    getExpenses() {
-        return "";
     }
 
     getEmail() {
@@ -128,7 +125,20 @@ class Students {
     }
 
     getLanguageLevels() {
-        return this.languages.map(lang => ({ language: lang.language, levelOfLanguage: lang.levelOfLanguage.level }));
+        return this.languages.map(lang => ({ language: lang.language, levelOfLanguage: lang.levelOfLanguage.LanguageLevel.level }));
+    }
+
+    getExpenses() {
+        return this.expenses;
+    }
+
+    addExpense(article, amount) {
+        const expense = new ItemsOfFinancialExpenses(article, amount);
+        this.expenses.push(expense);
+    }
+
+    removeExpense(expenseToRemove) {
+        this.expenses = this.expenses.filter(expense => expense !== expenseToRemove);
     }
 }
 
@@ -155,21 +165,21 @@ class Email {
 }
 
 class ItemsOfFinancialExpenses {
-    constructor(nameOfArticle, amount) {
-        this.nameOfArticle = nameOfArticle;
+    constructor(article, amount) {
+        this.article = article;
         this.amount = amount;
     }
 
     getNameOfArticle() {
-        return this.nameOfArticle;
+        return this.article;
     }
 
     updateNameOfArticle(newName) {
-        this.nameOfArticle = newName;
+        this.article = newName;
     }
 
     removeNameOfArticle() {
-        this.nameOfArticle = null;
+        this.article = null;
     }
 
     getAmount() {
@@ -184,7 +194,7 @@ class ItemsOfFinancialExpenses {
 class Language {
     constructor(language, levelOfLanguage, learnOfLanguage) {
         this.language = language;
-        this.levelOfLanguage = levelOfLanguage;
+        this.levelOfLanguage = levelOfLanguage.level;
         this.learnOfLanguage = learnOfLanguage;
     }
 
@@ -365,18 +375,19 @@ const student1 = new Students(
     'Іван',
     'Тарасович',
     'Лисиця',
-    'Стаття 1',
+    new ItemsOfFinancialExpenses('Стаття 1', 321),
+    new ExpensesTablePerMonth("Квітень", 333),
     new Date('2024-02-20'),
     new PhoneNumber('380837232843', 150, "Лайф"),
     [
         new Email("Rodasd@dasd.dsd"),
     ],
     [
-        new Language("Англійська", levels.A1),
-        new Language("Французька", levels.B2),
+        new Language("Англійська", levels.A1, "Призупинено"),
+        new Language("Французька", levels.B2, "В процесі"),
     ],
     [
-        new Hobby('football', 5, 'high'),
+        new Hobby('Футбол', 5, 'Високий'),
     ],
 );
 
@@ -384,18 +395,19 @@ const student2 = new Students(
     'Петро',
     'Іванович',
     'Щур',
-    'Стаття 1',
+    new ItemsOfFinancialExpenses('Стаття 2', 22),
+    new ExpensesTablePerMonth("Квітень", 333),
     new Date('2024-02-20'),
     new PhoneNumber('380662339163', 250, "Київстар"),
     [
         new Email("Rodasd@dasd.dsd"),
     ],
     [
-        new Language("Англійська", levels.A1),
-        new Language("Французька", levels.B2),
+        new Language("Англійська", levels.A1, "В процесі"),
+        new Language("Французька", levels.B2, "Призупинено"),
     ],
     [
-        new Hobby('football', 5, 'high'),
+        new Hobby('Футбол', 5, 'Високий'),
     ],
 );
 
@@ -403,18 +415,19 @@ const student3 = new Students(
     'Василь',
     'Вікторович',
     'Комп', 
-    'Стаття 1',
+    new ItemsOfFinancialExpenses('Стаття 3', 255),
+    new ExpensesTablePerMonth("Квітень", 333),
     new Date('2024-02-20'),
     new PhoneNumber('380847123921', 50, "Водафон"),
     [
         new Email("Rodasd@dasd.dsd"),
     ],
     [
-        new Language("Англійська", levels.A1),
-        new Language("Пакистанська", levels.B2)
+        new Language("Англійська", levels.A1, "В процесі"),
+        new Language("Пакистанська", levels.B2, "Призупинено")
     ],
     [
-        new Hobby('football', 4, 'high'),
+        new Hobby('Футбол', 4, 'Високий'),
     ],
 );
 
