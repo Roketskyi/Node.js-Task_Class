@@ -32,12 +32,6 @@ class DBForm {
     GetNumberOfStudentsForLanguageAtLevel(language, levelOfLanguage) {
         const level = Object.values(levels).find(l => l.level === levelOfLanguage);
     
-        if (!level) {
-            console.log(`Неправильний рівень мови: ${levelOfLanguage}`);
-
-            return 0;
-        }
-    
         return this.students.filter(student => student.languages.some(lang => lang.language === language && lang.levelOfLanguage.level === level.level)).length;
     }
     
@@ -45,23 +39,28 @@ class DBForm {
     GetMonthlyFeeForPerson(name) {
         const student = this.students.find(student => student.name === name);
     
-        if (student && student.phoneNumber) {
-            return student.phoneNumber.getPhoneMonthlyFee();
+        if (student && student.phoneNumberss) {
+            const totalMonthlyFee = student.phoneNumberss.reduce((acc, phoneNumberss) => {
+                return acc + phoneNumberss.getPhoneMonthlyFee();
+            }, 0);
+            return totalMonthlyFee;
         }
     
         return null;
     }
+    
 
     GetTopNStudentsWithHighestMonthlyFee(N) {
-        const studentsWithPhoneFee = this.students.filter(student => student.phoneNumber);
-        const sortedStudents = studentsWithPhoneFee.sort((a, b) => b.phoneNumber.getPhoneMonthlyFee() - a.phoneNumber.getPhoneMonthlyFee());
+        const studentsWithPhoneFee = this.students.filter(student => student.phoneNumbers);
+        // console.log(studentsWithPhoneFee)
+        const sortedStudents = studentsWithPhoneFee.sort((a, b) => b.phoneNumbers.getPhoneMonthlyFee() - a.phoneNumbers.getPhoneMonthlyFee());
         
         return sortedStudents.slice(0, N);
     }
 
     GetTopNStudentsWithLowestMonthlyFee(N) {
-        const studentsWithPhoneFee = this.students.filter(student => student.phoneNumber);
-        const sortedStudents = studentsWithPhoneFee.sort((a, b) => a.phoneNumber.getPhoneMonthlyFee() - b.phoneNumber.getPhoneMonthlyFee());
+        const studentsWithPhoneFee = this.students.filter(student => student.phoneNumberss);
+        const sortedStudents = studentsWithPhoneFee.sort((a, b) => a.phoneNumberss.getPhoneMonthlyFee() - b.phoneNumberss.getPhoneMonthlyFee());
         
         return sortedStudents.slice(0, N);
     }
@@ -70,7 +69,7 @@ class DBForm {
 class Students {
     static lastId = 0;
 
-    constructor(name, surname, lastName, article, expensesPerMonth, date, phoneNumber, emails, languages, hobby) {
+    constructor(name, surname, lastName, article, expensesPerMonth, date, phoneNumberss, emails, languages, hobby) {
         this.id = ++Students.lastId;
         this.name = name;
         this.surname = surname;
@@ -78,7 +77,7 @@ class Students {
         this.article = article;
         this.expensesPerMonth = expensesPerMonth;
         this.date = date;
-        this.phoneNumber = phoneNumber;
+        this.phoneNumberss = phoneNumberss;
         this.emails = emails;
         this.languages = languages;
         this.hobby = hobby;
@@ -194,7 +193,7 @@ class ItemsOfFinancialExpenses {
 class Language {
     constructor(language, levelOfLanguage, learnOfLanguage) {
         this.language = language;
-        this.levelOfLanguage = levelOfLanguage.level;
+        this.levelOfLanguage = levelOfLanguage;
         this.learnOfLanguage = learnOfLanguage;
     }
 
@@ -311,23 +310,23 @@ class Hobby {
     }
 }
 
-class PhoneNumber {
-    constructor(phoneNumber, phoneMonthlyFee, mobileOperator) {
-        this.phoneNumber = phoneNumber;
+class phoneNumbers {
+    constructor(phoneNumberss, phoneMonthlyFee, mobileOperator) {
+        this.phoneNumberss = phoneNumberss;
         this.phoneMonthlyFee = phoneMonthlyFee;
         this.mobileOperator = mobileOperator;
     }
 
-    getPhoneNumber() {
-        return this.phoneNumber;
+    getphoneNumbers() {
+        return this.phoneNumberss;
     }
 
-    updatePhoneNumber(newPhoneNumber) {
-        this.phoneNumber = newPhoneNumber;
+    updatephoneNumbers(newphoneNumbers) {
+        this.phoneNumbers = newphoneNumbers;
     }
 
-    removePhoneNumber() {
-        this.phoneNumber = null;
+    removephoneNumbers() {
+        this.phoneNumbers = null;
     }
 
     getPhoneMonthlyFee() {
@@ -362,13 +361,13 @@ class LanguageLevel {
 }
 
 const levels = {
-    A0: new LanguageLevel('A0'),
-    A1: new LanguageLevel('A1'),
-    A2: new LanguageLevel('A2'),
-    B1: new LanguageLevel('B1'),
-    B2: new LanguageLevel('B2'),
-    C1: new LanguageLevel('C1'),
-    C2: new LanguageLevel('C2')
+    A0: 'A0',
+    A1: 'A1',
+    A2: 'A2',
+    B1: 'B1',
+    B2: 'B2',
+    C1: 'C1',
+    C2: 'C2'
 };
 
 const student1 = new Students(
@@ -378,7 +377,7 @@ const student1 = new Students(
     new ItemsOfFinancialExpenses('Стаття 1', 321),
     new ExpensesTablePerMonth("Квітень", 333),
     new Date('2024-02-20'),
-    new PhoneNumber('380837232843', 150, "Лайф"),
+    new phoneNumbers('380837232843', 150, "Лайф"),
     [
         new Email("Rodasd@dasd.dsd"),
     ],
@@ -398,7 +397,7 @@ const student2 = new Students(
     new ItemsOfFinancialExpenses('Стаття 2', 22),
     new ExpensesTablePerMonth("Квітень", 333),
     new Date('2024-02-20'),
-    new PhoneNumber('380662339163', 250, "Київстар"),
+    new phoneNumbers('380662339163', 250, "Київстар"),
     [
         new Email("Rodasd@dasd.dsd"),
     ],
@@ -418,12 +417,15 @@ const student3 = new Students(
     new ItemsOfFinancialExpenses('Стаття 3', 255),
     new ExpensesTablePerMonth("Квітень", 333),
     new Date('2024-02-20'),
-    new PhoneNumber('380847123921', 50, "Водафон"),
+    [
+        new phoneNumbers('380847123921', 50, "Водафон"),
+        new phoneNumbers('3808471233232921', 250, "Київстар"),
+    ],
     [
         new Email("Rodasd@dasd.dsd"),
     ],
     [
-        new Language("Англійська", levels.A1, "В процесі"),
+        new Language("Англійська", levels.A0, "В процесі"),
         new Language("Пакистанська", levels.B2, "Призупинено")
     ],
     [
@@ -442,10 +444,10 @@ dbForm.addStudent(student3);
 
 // student2.languages[1].updateLanguageAndLevel("Іф", levels.B2);
 
-console.log("Отримання студента: ", (dbForm.getStudent('Василь')));
+// console.log("Отримання студента: ", (dbForm.getStudent('Василь')));
 
 // Отримуємо всіх студентів
-// console.log(`Отримання всіх студентів:`, (dbForm.getAllStudents()));
+// console.log((dbForm.getAllStudents()));
 
 // Отримуємо список мов
 // console.log("Отримання списку мов: ", dbForm.GetListOfLanguages());
@@ -456,10 +458,10 @@ console.log("Отримання студента: ", (dbForm.getStudent('Вас�
 // console.log("Кількість студентів, які знають Іф мову на рівні B2: ", dbForm.GetNumberOfStudentsForLanguageAtLevel('Іф', "B2"));
 
 // Отримуємо щомісячну плату за мобільний зв'язок для студента
-// console.log("Щомісячна плата за мобільний зв'язок для Івана: ", dbForm.GetMonthlyFeeForPerson('Іван'));
+console.log("Щомісячна плата за мобільний зв'язок для Василя: ", dbForm.GetMonthlyFeeForPerson('Василь'));
 
 // Отримання N абонентів з найбільшими витратами на мобільний зв'язок
-// console.log("Найбільші витрати на мобільний зв'язок:", dbForm.GetTopNStudentsWithHighestMonthlyFee(2));
+// console.log("Найбільші витрати на мобільний зв'язок:", dbForm.GetTopNStudentsWithHighestMonthlyFee(3));
 
 // Отримання N абонентів з найменшими витратами на мобільний зв'язок
 // console.log("Найменші витрати на мобільний зв'язок:", dbForm.GetTopNStudentsWithLowestMonthlyFee(2));
