@@ -49,21 +49,26 @@ class DBForm {
         return null;
     }
     
+    GetTopNStudentsWithHighestMonthlyFee(n) {
+        const sortedStudents = this.students.slice().sort((a, b) => {
+            const feeA = this.GetMonthlyFeeForPerson(a.name);
+            const feeB = this.GetMonthlyFeeForPerson(b.name);
+            return feeB - feeA;
+        });
 
-    GetTopNStudentsWithHighestMonthlyFee(N) {
-        const studentsWithPhoneFee = this.students.filter(student => student.phoneNumbers);
-        // console.log(studentsWithPhoneFee)
-        const sortedStudents = studentsWithPhoneFee.sort((a, b) => b.phoneNumbers.getPhoneMonthlyFee() - a.phoneNumbers.getPhoneMonthlyFee());
-        
-        return sortedStudents.slice(0, N);
+        return sortedStudents.slice(0, n);
     }
 
-    GetTopNStudentsWithLowestMonthlyFee(N) {
-        const studentsWithPhoneFee = this.students.filter(student => student.phoneNumberss);
-        const sortedStudents = studentsWithPhoneFee.sort((a, b) => a.phoneNumberss.getPhoneMonthlyFee() - b.phoneNumberss.getPhoneMonthlyFee());
-        
-        return sortedStudents.slice(0, N);
+    GetTopNStudentsWithLowestMonthlyFee(n) {
+        const sortedStudents = this.students.slice().sort((a, b) => {
+            const feeA = this.GetMonthlyFeeForPerson(a.name);
+            const feeB = this.GetMonthlyFeeForPerson(b.name);
+            return feeA - feeB;
+        });
+
+        return sortedStudents.slice(0, n);
     }
+    
 }
 
 class Students {
@@ -77,7 +82,7 @@ class Students {
         this.article = article;
         this.expensesPerMonth = expensesPerMonth;
         this.date = date;
-        this.phoneNumberss = phoneNumberss;
+        this.phoneNumberss = Array.isArray(phoneNumberss) ? phoneNumberss : [phoneNumberss];
         this.emails = emails;
         this.languages = languages;
         this.hobby = hobby;
@@ -377,7 +382,10 @@ const student1 = new Students(
     new ItemsOfFinancialExpenses('Стаття 1', 321),
     new ExpensesTablePerMonth("Квітень", 333),
     new Date('2024-02-20'),
-    new phoneNumbers('380837232843', 150, "Лайф"),
+    [
+        new phoneNumbers('380847123921', 200, "Лайф"),
+        new phoneNumbers('3808471233232921', 80, "Білайн"),
+    ],
     [
         new Email("Rodasd@dasd.dsd"),
     ],
@@ -458,10 +466,10 @@ dbForm.addStudent(student3);
 // console.log("Кількість студентів, які знають Іф мову на рівні B2: ", dbForm.GetNumberOfStudentsForLanguageAtLevel('Іф', "B2"));
 
 // Отримуємо щомісячну плату за мобільний зв'язок для студента
-console.log("Щомісячна плата за мобільний зв'язок для Василя: ", dbForm.GetMonthlyFeeForPerson('Василь'));
+// console.log("Щомісячна плата за мобільний зв'язок для Василя: ", dbForm.GetMonthlyFeeForPerson('Василь'));
 
 // Отримання N абонентів з найбільшими витратами на мобільний зв'язок
 // console.log("Найбільші витрати на мобільний зв'язок:", dbForm.GetTopNStudentsWithHighestMonthlyFee(3));
 
 // Отримання N абонентів з найменшими витратами на мобільний зв'язок
-// console.log("Найменші витрати на мобільний зв'язок:", dbForm.GetTopNStudentsWithLowestMonthlyFee(2));
+// console.log("Найменші витрати на мобільний зв'язок:", dbForm.GetTopNStudentsWithLowestMonthlyFee(3));
